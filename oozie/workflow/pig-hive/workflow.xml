@@ -1,0 +1,32 @@
+<workflow-app xmlns="uri:oozie:workflow:0.5" name="pig-wf">
+    <start to="pig-node"/>
+    <action name="pig-node">
+        <pig>
+            <job-tracker>${jobTracker}</job-tracker>
+            <name-node>${nameNode}</name-node>
+            <prepare>
+                <delete path="${delete_path}"/>
+            </prepare>
+           <!-- <job-xml>hive-site.xml</job-xml> -->
+            <configuration>
+                <property>
+                    <name>mapred.job.queue.name</name>
+                    <value>${queueName}</value>
+                </property>
+                <property>
+                    <name>mapred.compress.map.output</name>
+                    <value>true</value>
+                </property>
+            </configuration>
+            <script>${script}</script>
+           <param>OUTPUT=/user/${wf:user()}/${examplesRoot}/output-data/pig-hive</param>
+           <file>hive-site.xml</file>
+        </pig>
+        <ok to="end"/>
+        <error to="fail"/>
+    </action>
+    <kill name="fail">
+        <message>Pig failed, error message[${wf:errorMessage(wf:lastErrorNode())}]</message>
+    </kill>
+    <end name="end"/>
+</workflow-app>

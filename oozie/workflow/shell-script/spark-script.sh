@@ -1,0 +1,1 @@
+/usr/bin/cat script.scala | /usr/local/spark/bin/spark-submit --class org.apache.spark.repl.Main --master spark://namenode:7077 --executor-memory 1g --total-executor-cores 2 -usejavacp /user/hduser/oozie/apps/shell-script/spark-repl_2.11-2.1.0.jar

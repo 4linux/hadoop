@@ -1,0 +1,84 @@
+<workflow-app xmlns="uri:oozie:workflow:0.5" name="projeto06-sqoop-pig-wf">
+    <start to="sqoop-import-clientes"/>
+
+    <action name="sqoop-import-clientes">
+        <sqoop xmlns="uri:oozie:sqoop-action:0.2">
+            <job-tracker>${jobTracker}</job-tracker>
+            <name-node>${nameNode}</name-node>
+            <prepare>
+	<delete path="${delete_path_projeto06_clientes}"/>
+                <mkdir path="${create_path_projeto06_clientes}"/>
+            </prepare>
+            <configuration>
+                <property>
+                    <name>mapred.job.queue.name</name>
+                    <value>${queueName}</value>
+                </property>
+            </configuration>
+            <command>${script_import_clientes}</command>
+        </sqoop>
+
+       <ok to="sqoop-import-encomendas"/>
+        <error to="end"/>
+    </action>
+
+    <action name="sqoop-import-encomendas">
+        <sqoop xmlns="uri:oozie:sqoop-action:0.2">
+            <job-tracker>${jobTracker}</job-tracker>
+            <name-node>${nameNode}</name-node>
+            <prepare>
+	<delete path="${delete_path_projeto06_encomendas}"/>
+                <mkdir path="${create_path_projeto06_encomendas}"/>
+            </prepare>
+            <configuration>
+                <property>
+                    <name>mapred.job.queue.name</name>
+                    <value>${queueName}</value>
+                </property>
+            </configuration>
+            <command>${script_import_encomendas}</command>
+        </sqoop>
+
+       <ok to="pig-soma-de-encomendas-por-estado"/>
+        <error to="end"/>
+    </action>
+
+      <action name="pig-soma-de-encomendas-por-estado">
+        <pig>
+            <job-tracker>${jobTracker}</job-tracker>
+            <name-node>${nameNode}</name-node>
+            <prepare>
+            <delete path="${delete_path_projeto06_soma_encomendas_por_estado}"/>
+            <mkdir path="${create_path_projeto06_soma_encomendas_por_estado}"/>
+            </prepare>
+            <configuration>
+                <property>
+                    <name>mapred.job.queue.name</name>
+                    <value>${queueName}</value>
+                </property>
+                <property>
+                    <name>mapred.compress.map.output</name>
+                    <value>true</value>
+                </property>
+            </configuration>
+            <script>${script}</script>
+         </pig>
+         <ok to="Enviar-Email"/>
+        <error to="end"/>
+    </action>
+
+    <action name="Enviar-Email">
+        <email xmlns="uri:oozie:email-action:0.1">
+            <to>suporte@dexter.com.br</to>
+            <subject>Notificação de Job: Projeto 06 - Soma de Encomendas por Estado</subject>
+            <body>O Job ${wf:id()} foi completado com sucesso! Verifique o resultado da Analise em: hdfs://192.168.56.100:8020/dexter/projeto06/soma_de_encomendas_por_estado</body>
+        </email>
+
+        <ok to="end"/>
+        <error to="fail"/>
+    </action>
+    <kill name="fail">
+        <message>Mail failed, error message[${wf:errorMessage(wf:lastErrorNode())}]</message>
+    </kill>
+    <end name="end"/>
+</workflow-app>

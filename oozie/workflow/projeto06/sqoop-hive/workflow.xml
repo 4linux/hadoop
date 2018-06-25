@@ -1,0 +1,80 @@
+<workflow-app xmlns="uri:oozie:workflow:0.5" name="projeto06-sqoop-hive-wf">
+    <start to="sqoop-import-funcionarios"/>
+
+    <action name="sqoop-import-funcionarios">
+        <sqoop xmlns="uri:oozie:sqoop-action:0.2">
+            <job-tracker>${jobTracker}</job-tracker>
+            <name-node>${nameNode}</name-node>
+            <prepare>
+	        <delete path="${delete_path_projeto06_funcionarios}"/>
+                <mkdir path="${create_path_projeto06_funcionarios}"/>
+            </prepare>
+            <configuration>
+                <property>
+                    <name>mapred.job.queue.name</name>
+                    <value>${queueName}</value>
+                </property>
+            </configuration>
+            <command>${script_import_funcionarios}</command>
+        </sqoop>
+
+       <ok to="sqoop-import-perfis"/>
+        <error to="end"/>
+    </action>
+
+    <action name="sqoop-import-perfis">
+        <sqoop xmlns="uri:oozie:sqoop-action:0.2">
+            <job-tracker>${jobTracker}</job-tracker>
+            <name-node>${nameNode}</name-node>
+            <prepare>
+	        <delete path="${delete_path_projeto06_perfis}"/>
+                <mkdir path="${create_path_projeto06_perfis}"/>
+            </prepare>
+            <configuration>
+                <property>
+                    <name>mapred.job.queue.name</name>
+                    <value>${queueName}</value>
+                </property>
+            </configuration>
+            <command>${script_import_perfis}</command>
+        </sqoop>
+
+       <ok to="hive-soma-salarios-por-perfis"/>
+        <error to="end"/>
+    </action>
+
+    <action name="hive-soma-salarios-por-perfis">
+        <hive xmlns="uri:oozie:hive-action:0.2">
+            <job-tracker>${jobTracker}</job-tracker>
+            <name-node>${nameNode}</name-node>
+            <prepare>
+            <delete path="${delete_path_projeto06_soma_salarios_por_perfis}"/>
+            <mkdir path="${create_path_projeto06_soma_salarios_por_perfis}"/>
+            </prepare>
+            <configuration>
+                <property>
+                    <name>mapred.job.queue.name</name>
+                    <value>${queueName}</value>
+                </property>
+            </configuration>
+            <script>${script_hive}</script>
+            </hive>
+        <ok to="Enviar-Email"/>
+        <error to="end"/>
+    </action>
+
+    <action name="Enviar-Email">
+        <email xmlns="uri:oozie:email-action:0.1">
+            <to>suporte@dexter.com.br</to>
+            <subject>Notificação de Job: Projeto 06 - Soma De Salario Por Perfil</subject>
+            <body>O Job ${wf:id()} foi completado com sucesso! Verifique o resultado da Analise em: hdfs://192.168.56.100:8020/dexter/projeto06/soma_de_salario_por_perfil</body>
+        </email>
+
+        <ok to="end"/>
+        <error to="fail"/>
+    </action>
+    <kill name="fail">
+        <message>Mail failed, error message[${wf:errorMessage(wf:lastErrorNode())}]</message>
+    </kill>
+    <end name="end"/>
+</workflow-app>

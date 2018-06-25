@@ -1,0 +1,83 @@
+<workflow-app xmlns="uri:oozie:workflow:0.5" name="projeto06-sqoop-spark-scala-wf">
+    <start to="sqoop-import-tipos-encomenda"/>
+
+    <action name="sqoop-import-tipos-encomenda">
+        <sqoop xmlns="uri:oozie:sqoop-action:0.2">
+            <job-tracker>${jobTracker}</job-tracker>
+            <name-node>${nameNode}</name-node>
+            <prepare>
+	<delete path="${delete_path_projeto06_tipos_encomenda}"/>
+                <mkdir path="${create_path_projeto06_tipos_encomenda}"/>
+            </prepare>
+            <configuration>
+                <property>
+                    <name>mapred.job.queue.name</name>
+                    <value>${queueName}</value>
+                </property>
+            </configuration>
+            <command>${script_import_tipos_encomenda}</command>
+        </sqoop>
+
+       <ok to="sqoop-import-encomendas"/>
+        <error to="end"/>
+    </action>
+
+    <action name="sqoop-import-encomendas">
+        <sqoop xmlns="uri:oozie:sqoop-action:0.2">
+            <job-tracker>${jobTracker}</job-tracker>
+            <name-node>${nameNode}</name-node>
+            <prepare>
+	<delete path="${delete_path_projeto06_encomendas}"/>
+                <mkdir path="${create_path_projeto06_encomendas}"/>
+            </prepare>
+            <configuration>
+                <property>
+                    <name>mapred.job.queue.name</name>
+                    <value>${queueName}</value>
+                </property>
+            </configuration>
+            <command>${script_import_encomendas}</command>
+        </sqoop>
+
+       <ok to="spark-scala-soma-encomendas-por-tipos"/>
+        <error to="end"/>
+    </action>
+
+      <action name="spark-scala-soma-encomendas-por-tipos">
+        <shell xmlns="uri:oozie:shell-action:0.2">
+            <job-tracker>${jobTracker}</job-tracker>
+            <name-node>${nameNode}</name-node>
+            <prepare>
+                <delete path="${delete_path_projeto06_soma_encomendas_por_tipos}"/>
+            </prepare>
+            <configuration>
+                <property>
+                    <name>mapred.job.queue.name</name>
+                    <value>${queueName}</value>
+                </property>
+            </configuration>
+            <exec>spark-script.sh</exec>
+            <file>/user/hduser/oozie/apps/projeto06-sqoop-spark-scala/spark-script.sh#spark-script.sh</file>
+	    <file>/user/hduser/oozie/apps/projeto06-sqoop-spark-scala/spark-repl_2.11-2.1.0.jar#spark-repl_2.11-2.1.0.jar</file>
+	    <file>/user/hduser/oozie/apps/projeto06-sqoop-spark-scala/script.scala#script.scala</file>
+            <capture-output/>
+          </shell>
+         <ok to="Enviar-Email"/>
+        <error to="end"/>
+    </action>
+
+    <action name="Enviar-Email">
+        <email xmlns="uri:oozie:email-action:0.1">
+            <to>suporte@dexter.com.br</to>
+            <subject>Notificação de Job: Projeto 06 - Soma de Encomendas por Tipos</subject>
+            <body>O Job ${wf:id()} foi completado com sucesso! Verifique o resultado da Analise em: hdfs://192.168.56.100:8020/dexter/projeto06/soma_encomendas_por_tipos</body>
+        </email>
+
+        <ok to="end"/>
+        <error to="fail"/>
+    </action>
+    <kill name="fail">
+	<message>Email,	error message[${wf:errorMessage(wf:lastErrorNode())}]</message>
+    </kill>
+    <end name="end"/>
+</workflow-app>

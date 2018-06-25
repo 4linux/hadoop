@@ -1,0 +1,30 @@
+<workflow-app xmlns="uri:oozie:workflow:0.5" name="shell-wf">
+    <start to="shell-node"/>
+    <action name="shell-node">
+        <shell xmlns="uri:oozie:shell-action:0.2">
+            <job-tracker>${jobTracker}</job-tracker>
+            <name-node>${nameNode}</name-node>
+            <prepare>
+                <delete path="${delete_path}"/>
+            </prepare>
+            <configuration>
+                <property>
+                    <name>mapred.job.queue.name</name>
+                    <value>${queueName}</value>
+                </property>
+            </configuration>
+            <exec>spark-script.sh</exec>
+            <file>/user/hduser/oozie/apps/shell-script/spark-script.sh#spark-script.sh</file>
+	    <file>/user/hduser/oozie/apps/shell-script/spark-repl_2.11-2.1.0.jar#spark-repl_2.11-2.1.0.jar</file>
+	    <file>/user/hduser/oozie/apps/shell-script/script.scala#script.scala</file>
+            <capture-output/>
+          </shell>
+          <ok to="end"/>
+          <error to="fail"/>
+      </action>
+      <kill name="fail">
+        <message>"Shell action failed, error message[${wf:errorMessage(wf:lastErrorNode())}]"</message>
+      </kill>
+      <end name="end"/>
+</workflow-app>
+

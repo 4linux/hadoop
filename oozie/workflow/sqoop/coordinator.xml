@@ -1,0 +1,13 @@
+<coordinator-app name="import-funcionarios" frequency="5 * * * *" start="${start}" end="${end}" timezone="UTC" xmlns="uri:oozie:coordinator:0.4">
+
+  <controls>
+    <concurrency>1</concurrency>
+  </controls>
+
+  <action>
+    <workflow>
+      <app-path>hdfs://namenode:8020/user/hduser/oozie/apps/sqoop/workflow.xml</app-path>
+    </workflow>
+  </action>
+	
+</coordinator-app>

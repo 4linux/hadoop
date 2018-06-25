@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workflow-app xmlns="uri:oozie:workflow:0.5" name="hive-wf">
+    <start to="hive-node"/>
+
+    <action name="hive-node">
+        <hive xmlns="uri:oozie:hive-action:0.2">
+            <job-tracker>${jobTracker}</job-tracker>
+            <name-node>${nameNode}</name-node>
+            <prepare>
+              <delete path="${delete_path}"/>
+             <mkdir path="${create_path}"/>
+            </prepare>
+            <configuration>
+                <property>
+                    <name>mapred.job.queue.name</name>
+                    <value>${queueName}</value>
+                </property>
+            </configuration>
+            <script>${script}</script>
+            <param>INPUT=/user/${wf:user()}/${examplesRoot}/output-data/sqoop</param>
+            <param>OUTPUT=/user/${wf:user()}/${examplesRoot}/output-data/hive</param>
+        </hive>
+        <ok to="end"/>
+        <error to="fail"/>
+    </action>
+
+    <kill name="fail">
+        <message>Hive failed, error message[${wf:errorMessage(wf:lastErrorNode())}]</message>
+    </kill>
+    <end name="end"/>
+</workflow-app>
